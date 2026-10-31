@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>HAMMAD PAPA:: Guild Glory Command</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<style>
+@property --a{syntax:'<angle>';inherits:false;initial-value:0deg}
+:root{
+  --bg:#000;
+  --card:#050505;
+  --card-2:#0b0b0b;
+  --line:rgba(255,255,255,.08);
+  --line-2:rgba(255,255,255,.16);
+  --line-3:rgba(255,255,255,.42);
+  --txt:#fff;
+  --txt-2:rgba(255,255,255,.58);
+  --txt-3:rgba(255,255,255,.32);
+  --r1:12px; --r2:18px; --r3:24px;
+  --nav:62px;
+  --ease:cubic-bezier(.22,.8,.24,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%;background:var(--bg);color:var(--txt);font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{padding-top:env(safe-area-inset-top,0);position:relative}
+::selection{background:#fff;color:#000}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:10px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* barely-there ambient light, everything else stays pure black */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(700px 320px at 50% -80px,rgba(255,255,255,.07),transparent 70%)}
+
+/* animated hairline border (modern @property trick) */
+.gborder{position:relative}
+.gborder::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;background:conic-gradient(from var(--a),transparent 0 62%,rgba(255,255,255,.9) 86%,transparent 100%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);animation:spin 7s linear infinite}
+@keyframes spin{to{--a:360deg}}
+
+/* ========== LOGIN ========== */
+#gate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;background:#000;overflow:hidden}
+#gate::before{content:"";position:absolute;left:50%;top:50%;width:560px;height:560px;transform:translate(-50%,-62%);background:radial-gradient(circle,rgba(255,255,255,.09),transparent 62%);pointer-events:none}
+.gate-card{position:relative;z-index:1;width:100%;max-width:380px;padding:44px 30px 30px;border-radius:var(--r3);background:var(--card);border:1px solid var(--line);text-align:center;animation:rise .8s var(--ease)}
+.gate-card.shake{animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+.gate-logo{width:60px;height:60px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;color:#000;margin:0 auto 24px}
+.gate-title{font-size:30px;font-weight:700;letter-spacing:11px;padding-left:11px;color:#fff;line-height:1}
+.gate-sub{font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--txt-3);margin:12px 0 32px;font-weight:500}
+.gate-input{width:100%;padding:16px 18px;border-radius:var(--r1);border:1px solid var(--line-2);background:#000;color:#fff;font-family:'Fira Code',monospace;font-size:13px;letter-spacing:4px;outline:none;transition:.25s var(--ease);text-align:center}
+.gate-input::placeholder{color:var(--txt-3);letter-spacing:4px;font-size:11px}
+.gate-input:focus{border-color:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.07)}
+.gate-err{min-height:18px;color:#fff;font-size:11px;font-weight:600;letter-spacing:1.5px;margin:10px 0 12px}
+.gate-btn{width:100%;padding:16px;border:0;border-radius:var(--r1);background:#fff;color:#000;font-weight:700;font-size:12px;letter-spacing:3px;cursor:pointer;transition:.25s var(--ease);font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px}
+.gate-btn:hover{box-shadow:0 0 0 4px rgba(255,255,255,.15),0 14px 40px rgba(255,255,255,.18)}
+.gate-btn:active{transform:scale(.98)}
+.gate-btn i{transition:transform .25s var(--ease)}
+.gate-btn:hover i{transform:translateX(4px)}
+
+/* ========== SHELL ========== */
+#app{display:none;position:relative;z-index:1}
+.wrap{max-width:1240px;margin:0 auto;padding:0 16px calc(var(--nav) + 48px)}
+
+/* ========== HUD ========== */
+.hud{position:sticky;top:0;z-index:100;margin:0 -16px 20px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(0,0,0,.82);border-bottom:1px solid var(--line);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%)}
+.hud-brand{display:flex;align-items:center;gap:13px;min-width:0}
+.hud-mark{width:38px;height:38px;border-radius:11px;background:#fff;display:flex;align-items:center;justify-content:center;color:#000;font-size:15px;flex-shrink:0}
+.hud-name{font-size:15px;font-weight:700;letter-spacing:6px;color:#fff;line-height:1}
+.hud-tagline{display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:2.6px;text-transform:uppercase;color:var(--txt-3);font-weight:500;margin-top:7px}
+.hud-live{display:inline-flex;align-items:center;gap:7px;color:#fff;font-weight:700}
+.hud-live .dot{position:relative;width:6px;height:6px;border-radius:50%;background:#fff}
+.hud-live .dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid #fff;animation:ping 1.8s var(--ease) infinite}
+@keyframes ping{from{transform:scale(.5);opacity:.9}to{transform:scale(1.8);opacity:0}}
+.hud-actions{display:flex;gap:6px}
+
+/* ========== BUTTONS ========== */
+.btn{padding:10px 16px;border-radius:var(--r1);border:1px solid var(--line-2);background:#000;color:#fff;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:.22s var(--ease);display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;font-family:inherit}
+.btn:hover{border-color:#fff;background:#0d0d0d}
+.btn:active{transform:scale(.96)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-w{background:#fff;color:#000;border-color:#fff;font-weight:700}
+.btn-w:hover{background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.16),0 10px 34px rgba(255,255,255,.2)}
+.btn-icon{width:38px;height:38px;padding:0}
+
+/* ========== HERO ========== */
+.hero{display:none;overflow:hidden;padding:34px 28px 26px;border-radius:var(--r3);background:var(--card);border:1px solid var(--line);margin-bottom:18px;animation:rise .7s var(--ease)}
+.hero.show{display:block}
+.hero::after{content:"";position:absolute;right:-140px;top:-190px;width:460px;height:460px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.08),transparent 65%);pointer-events:none}
+.hero-top{position:relative;z-index:1;display:grid;grid-template-columns:1fr minmax(0,340px);gap:28px;align-items:end}
+.hero-label{display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:4.5px;text-transform:uppercase;color:var(--txt-2);font-weight:600;margin-bottom:16px}
+.hero-label::before{content:"";width:6px;height:6px;background:#fff}
+.hero-glory{font-size:clamp(46px,9vw,84px);font-weight:700;line-height:.95;letter-spacing:-.045em;color:#fff;font-variant-numeric:tabular-nums}
+.hero-glory small{font-size:13px;letter-spacing:4px;color:var(--txt-3);margin-left:12px;font-weight:500;text-transform:uppercase}
+.hero-gained{display:inline-flex;align-items:center;gap:9px;margin-top:22px;padding:9px 16px;border-radius:8px;background:#fff;color:#000;font-family:'Fira Code',monospace;font-size:12px;font-weight:600}
+.hero-gained i{font-size:10px}
+.spark{position:relative;height:96px;border-radius:var(--r1);border:1px solid var(--line);background:#000;overflow:hidden}
+.spark svg{position:absolute;inset:0;width:100%;height:100%}
+.spark-dot{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.18),0 0 18px #fff}
+.spark-tag{position:absolute;left:12px;top:9px;font-size:8.5px;letter-spacing:2.4px;text-transform:uppercase;color:var(--txt-3);font-weight:600}
+.spark-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--txt-3)}
+.hero-meta{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,1fr);margin-top:28px;border-top:1px solid var(--line);padding-top:20px;gap:14px}
+.hero-meta div{font-size:9px;letter-spacing:2.2px;text-transform:uppercase;color:var(--txt-3);font-weight:600;min-width:0}
+.hero-meta div b{display:block;font-size:14px;color:#fff;font-weight:500;font-family:'Fira Code',monospace;letter-spacing:.2px;margin-top:8px;text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ========== GUILD GRID ========== */
+.guild-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-bottom:18px}
+.guild-card{--mx:50%;--my:0%;position:relative;overflow:hidden;padding:22px;border-radius:var(--r2);background:var(--card);border:1px solid var(--line);cursor:pointer;transition:transform .35s var(--ease),border-color .3s}
+.guild-card.enter{animation:rise .6s var(--ease) backwards}
+.guild-card::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(240px circle at var(--mx) var(--my),rgba(255,255,255,.09),transparent 70%)}
+.guild-card:hover{border-color:var(--line-3);transform:translateY(-3px)}
+.guild-card:hover::before{opacity:1}
+.gc-head{position:relative;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:20px}
+.gc-name{font-size:18px;font-weight:700;color:#fff;margin-bottom:10px;line-height:1.2;letter-spacing:-.3px}
+.gc-region{display:inline-block;padding:3px 9px;border-radius:6px;font-size:9px;font-weight:600;letter-spacing:1.6px;color:var(--txt-2);border:1px solid var(--line-2);font-family:'Fira Code',monospace}
+.gc-level{font-size:10px;font-weight:700;letter-spacing:1px;padding:5px 10px;border-radius:6px;background:#fff;color:#000;font-family:'Fira Code',monospace;flex-shrink:0}
+.gc-stats{position:relative;display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#000}
+.gc-stat{padding:14px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.gc-stat:nth-child(2n){border-right:0}
+.gc-stat:nth-last-child(-n+2){border-bottom:0}
+.gc-stat span{display:block;font-size:8.5px;letter-spacing:2.2px;text-transform:uppercase;color:var(--txt-3);font-weight:600;margin-bottom:8px}
+.gc-stat strong{display:block;font-size:16px;color:var(--txt-2);font-family:'Fira Code',monospace;font-weight:500;font-variant-numeric:tabular-nums}
+.gc-stat:first-child strong{color:#fff;font-weight:600}
+.gc-stat.gain strong{color:#fff;font-weight:700}
+.gc-stat.gain strong::before{content:"";display:inline-block;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:6px solid #fff;margin-right:7px;vertical-align:2px}
+.gc-stat.gain.neg strong::before{border-bottom:0;border-top:6px solid #fff}
+.gc-foot{position:relative;margin-top:16px;display:flex;justify-content:space-between;align-items:center;font-size:9.5px;color:var(--txt-3);letter-spacing:1.6px;text-transform:uppercase}
+.gc-foot b{color:var(--txt-2);font-weight:500;font-family:'Fira Code',monospace;letter-spacing:.4px;text-transform:none;margin-left:4px}
+
+/* skeleton */
+.skel{cursor:default;pointer-events:none}
+.sk{border-radius:8px;background:linear-gradient(90deg,#0a0a0a 30%,#1a1a1a 50%,#0a0a0a 70%);background-size:300% 100%;animation:shim 1.3s linear infinite}
+.sk-t{height:20px;width:60%;margin-bottom:12px}
+.sk-s{height:14px;width:22%;margin-bottom:22px}
+.sk-b{height:108px}
+@keyframes shim{from{background-position:100% 0}to{background-position:-100% 0}}
+
+/* ========== EMPTY ========== */
+.empty-state{grid-column:1/-1;text-align:center;padding:68px 20px;color:var(--txt-3);background:var(--card);border:1px dashed var(--line-2);border-radius:var(--r2)}
+.empty-state i{font-size:32px;margin-bottom:20px;color:var(--txt-3);display:block}
+.empty-state p{font-size:11px;margin-bottom:24px;letter-spacing:3px;text-transform:uppercase;font-weight:600}
+
+/* ========== DETAIL ========== */
+.detail-panel{display:none;padding:24px;border-radius:var(--r3);background:var(--card);border:1px solid var(--line-2);margin-bottom:18px;animation:drop .4s var(--ease)}
+.detail-panel.show{display:block}
+@keyframes drop{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+.dp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--line);gap:10px}
+.dp-title{font-size:15px;font-weight:700;color:#fff;display:flex;align-items:center;gap:12px;min-width:0;line-height:1.35}
+.dp-title i{color:#000;background:#fff;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.dp-grid{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#000;margin-bottom:16px}
+.dp-grid .gc-stat{border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.dp-grid .gc-stat:nth-child(3n){border-right:0}
+.dp-grid .gc-stat:nth-last-child(-n+3){border-bottom:0}
+.dp-bio{padding:16px 18px;border-radius:14px;background:#000;border:1px solid var(--line);font-size:12px;color:var(--txt-2);line-height:1.7}
+.dp-bio b{color:#fff;font-weight:700;letter-spacing:2.4px;text-transform:uppercase;font-size:9px;margin-right:10px}
+.dp-actions{margin-top:18px;display:flex;gap:8px;flex-wrap:wrap}
+
+/* ========== CONSOLE ========== */
+.console{border-radius:var(--r2);background:var(--card);border:1px solid var(--line);overflow:hidden}
+.console-top{padding:15px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.console-top h3{font-size:11px;font-weight:700;letter-spacing:3.2px;text-transform:uppercase;color:#fff;display:flex;align-items:center;gap:12px}
+.console-top h3 i{color:var(--txt-3);font-size:12px}
+.console-body{margin:14px;padding:16px;border-radius:14px;background:#000;border:1px solid var(--line);height:340px;overflow-y:auto;font-family:'Fira Code',monospace;font-size:10.5px;line-height:1.9}
+.console-body::after{content:"▍";color:#fff;animation:caret 1s steps(2) infinite}
+@keyframes caret{50%{opacity:0}}
+.log{display:flex;gap:12px;margin-bottom:2px;word-break:break-word}
+.log-t{color:var(--txt-3);flex-shrink:0}
+.log-m{color:var(--txt-2)}
+.log-m::before{display:inline-block;width:14px;color:var(--txt-3)}
+.log-m.info::before{content:"›"}
+.log-m.ok{color:#fff}
+.log-m.ok::before{content:"✓";color:#fff}
+.log-m.warn{color:#cfcfcf;font-style:italic}
+.log-m.warn::before{content:"!";color:#cfcfcf}
+.log-m.err{color:#000;background:#fff;padding:0 6px;border-radius:3px;font-weight:600}
+.log-m.err::before{content:"✕";color:#000}
+
+/* ========== MODAL ========== */
+.modal-back{position:fixed;inset:0;z-index:5000;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.modal-back.show{display:flex}
+.modal-box{width:100%;max-width:460px;padding:26px 24px calc(26px + env(safe-area-inset-bottom,0));border-radius:26px 26px 0 0;background:var(--card);border:1px solid var(--line-2);border-bottom:0;animation:slideUp .45s var(--ease);max-height:92dvh;overflow-y:auto}
+.modal-box::before{content:"";display:block;width:38px;height:4px;border-radius:4px;background:var(--line-2);margin:-8px auto 18px}
+@keyframes slideUp{from{transform:translateY(70px);opacity:0}to{transform:none;opacity:1}}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.modal-head h3{font-size:16px;font-weight:700;color:#fff;display:flex;align-items:center;gap:12px}
+.modal-head h3 i{color:#000;background:#fff;width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.modal-x{width:34px;height:34px;border-radius:10px;border:1px solid var(--line-2);background:#000;color:var(--txt-2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.22s var(--ease)}
+.modal-x:hover{color:#000;background:#fff;border-color:#fff}
+.field{margin-bottom:16px}
+.field label{display:block;margin-bottom:9px;font-size:9px;font-weight:700;letter-spacing:2.6px;text-transform:uppercase;color:var(--txt-3)}
+.field select,.field input{width:100%;padding:14px 16px;border-radius:var(--r1);border:1px solid var(--line-2);background:#000;color:#fff;font-family:'Fira Code',monospace;font-size:13px;outline:none;transition:.22s var(--ease);appearance:none;-webkit-appearance:none}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23999' stroke-width='1.5'%3E%3Cpath d='M1 1l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:40px}
+.field select option{background:#0a0a0a;color:#fff}
+.field select:focus,.field input:focus{border-color:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.07)}
+.field input::placeholder{color:var(--txt-3)}
+.modal-actions{display:flex;gap:10px;margin-top:26px}
+.modal-actions .btn{flex:1;padding:15px}
+
+/* ========== CONFIRM DIALOG ========== */
+dialog#ask{margin:auto;padding:0;border:1px solid var(--line-3);border-radius:var(--r2);background:#000;color:#fff;width:min(340px,calc(100% - 32px))}
+dialog#ask::backdrop{background:rgba(0,0,0,.85);backdrop-filter:blur(8px)}
+dialog#ask[open]{animation:rise .3s var(--ease)}
+.ask-box{padding:26px 22px 20px}
+.ask-box p{font-size:15px;font-weight:600;line-height:1.45;margin-bottom:22px}
+.ask-actions{display:flex;gap:10px}
+.ask-actions .btn{flex:1;padding:13px}
+
+/* ========== TOAST ========== */
+#toasts{position:fixed;top:calc(env(safe-area-inset-top,0) + 76px);left:50%;transform:translateX(-50%);z-index:9000;display:flex;flex-direction:column;gap:8px;align-items:center;width:min(380px,calc(100% - 28px));pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--r1);background:#000;border:1px solid var(--line-3);color:#fff;font-size:12px;font-weight:600;letter-spacing:.3px;animation:rise .35s var(--ease);box-shadow:0 14px 40px rgba(0,0,0,.9)}
+.toast.err{background:#fff;color:#000;border-color:#fff}
+.toast.out{opacity:0;transform:translateY(-8px);transition:.3s}
+
+/* ========== MOBILE ========== */
+.mnav{display:none}
+@media(max-width:800px){
+  .wrap{padding:0 12px calc(var(--nav) + 44px)}
+  .hud{margin:0 -12px 16px;padding:12px}
+  .hud-name{font-size:13px;letter-spacing:5px}
+  .hero{padding:26px 20px 20px}
+  .hero-top{grid-template-columns:1fr;gap:22px}
+  .hero-meta{grid-template-columns:1fr 1fr;row-gap:18px}
+  .guild-grid{grid-template-columns:1fr}
+  .dp-grid{grid-template-columns:repeat(2,1fr)}
+  .dp-grid .gc-stat,.dp-grid .gc-stat:nth-child(3n){border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .dp-grid .gc-stat:nth-child(2n){border-right:0}
+  .dp-grid .gc-stat:nth-last-child(-n+3){border-bottom:1px solid var(--line)}
+  .dp-grid .gc-stat:nth-last-child(-n+2){border-bottom:0}
+  .console-body{height:280px}
+  .mnav{display:flex;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0));width:min(340px,calc(100% - 28px));height:var(--nav);z-index:4000;justify-content:space-around;align-items:center;padding:6px;border-radius:20px;background:rgba(0,0,0,.88);border:1px solid var(--line-2);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 18px 50px rgba(0,0,0,.95)}
+  .mnav-btn{flex:1;height:100%;border:0;background:none;color:var(--txt-3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:9px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;border-radius:14px;cursor:pointer;transition:.3s var(--ease);font-family:inherit}
+  .mnav-btn i{font-size:16px}
+  .mnav-btn.on{background:#fff;color:#000}
+}
+@media(min-width:640px){
+  .modal-back{align-items:center}
+  .modal-box{border-radius:var(--r3);border-bottom:1px solid var(--line-2)}
+  .modal-box::before{display:none}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<section id="gate">
+  <div class="gate-card gborder" id="gate-card">
+    <div class="gate-logo"><i class="fa-solid fa-shield-halved"></i></div>
+    <div class="gate-title">HAMMAD PAPA </div>
+    <div class="gate-sub">Guild Glory Command</div>
+    <form onsubmit="doLogin(event)">
+      <input id="gate-key" class="gate-input" type="password" placeholder="ACCESS KEY" autocomplete="off">
+      <div id="gate-err" class="gate-err"></div>
+      <button class="gate-btn" type="submit">ENTER <i class="fa-solid fa-arrow-right"></i></button>
+    </form>
+  </div>
+</section>
+
+<!-- ============ APP ============ -->
+<div id="app">
+<div class="wrap">
+
+  <!-- HUD -->
+  <header class="hud">
+    <div class="hud-brand">
+      <div class="hud-mark"><i class="fa-solid fa-shield-halved"></i></div>
+      <div>
+        <div class="hud-name">HAMMAD </div>
+        <div class="hud-tagline"><span class="hud-live"><span class="dot"></span>LIVE</span> · Guild Glory</div>
+      </div>
+    </div>
+    <div class="hud-actions">
+      <button class="btn btn-icon" onclick="refreshNow()" aria-label="Refresh"><i class="fa-solid fa-arrows-rotate"></i></button>
+      <button class="btn btn-icon btn-w" onclick="openModal()" aria-label="New team"><i class="fa-solid fa-plus"></i></button>
+      <button class="btn btn-icon" onclick="doLogout()" aria-label="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <div class="hero gborder" id="hero">
+    <div class="hero-top">
+      <div>
+        <div class="hero-label">Total Glory</div>
+        <div class="hero-glory" id="hero-glory"><span id="hero-num">—</span><small>pts</small></div>
+        <div class="hero-gained" id="hero-gained"><i class="fa-solid fa-arrow-trend-up"></i> +0 gained</div>
+      </div>
+      <div class="spark" id="hero-spark"></div>
+    </div>
+    <div class="hero-meta">
+      <div>Baseline<b id="hero-base">—</b></div>
+      <div>Guild<b id="hero-name">—</b></div>
+      <div>Members<b id="hero-members">—</b></div>
+      <div>Level<b id="hero-level">—</b></div>
+    </div>
+  </div>
+
+  <!-- GUILD GRID -->
+  <div class="guild-grid" id="guild-grid">
+    <div class="empty-state" id="empty-state">
+      <i class="fa-solid fa-ghost"></i>
+      <p>No active team yet</p>
+      <button class="btn btn-w" onclick="openModal()"><i class="fa-solid fa-plus"></i> Create Team</button>
+    </div>
+  </div>
+
+  <!-- DETAIL PANEL -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="dp-head">
+      <div class="dp-title"><i class="fa-solid fa-users"></i><span id="dp-title-txt">Guild Details</span></div>
+      <button class="btn btn-icon" onclick="closeDetail()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="dp-body"></div>
+  </div>
+
+  <!-- CONSOLE -->
+  <div class="console">
+    <div class="console-top">
+      <h3><i class="fa-solid fa-terminal"></i> Live Console</h3>
+      <button class="btn btn-icon" onclick="clearLogs()" aria-label="Clear logs"><i class="fa-solid fa-trash"></i></button>
+    </div>
+    <div class="console-body" id="console-body"></div>
+  </div>
+
+</div>
+
+<!-- NAV -->
+<nav class="mnav">
+  <button class="mnav-btn on" onclick="tabHome(this)"><i class="fa-solid fa-house"></i>Home</button>
+  <button class="mnav-btn" onclick="openModal()"><i class="fa-solid fa-circle-plus"></i>New</button>
+  <button class="mnav-btn" onclick="tabConsole(this)"><i class="fa-solid fa-terminal"></i>Console</button>
+</nav>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-back" id="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3><i class="fa-solid fa-users-gear"></i> Create New Team</h3>
+      <button class="modal-x" onclick="closeModal()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form onsubmit="submitTeam(event)">
+      <div class="field">
+        <label>Region</label>
+        <select id="m-region">
+          <option value="BD">BD — Bangladesh</option>
+          <option value="IND" selected>IND — India</option>
+          <option value="ID">ID — Indonesia</option>
+          <option value="PK">PK — Pakistan</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Guild / Clan ID</label>
+        <input id="m-clan" type="text" inputmode="numeric" placeholder="e.g. 3054207827" value="">
+      </div>
+      <div class="field">
+        <label>Squad Size</label>
+        <select id="m-count">
+          <option value="4" selected>4 Bots (Full)</option>
+          <option value="3">3 Bots</option>
+          <option value="2">2 Bots</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-w" id="m-submit"><i class="fa-solid fa-bolt"></i> Create & Start</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<dialog id="ask">
+  <div class="ask-box">
+    <p id="ask-msg"></p>
+    <div class="ask-actions">
+      <button class="btn" id="ask-no" type="button">Cancel</button>
+      <button class="btn btn-w" id="ask-yes" type="button">Confirm</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="toasts"></div>
+
+<script>
+const ACCESS_KEY = "SonuSuraj";
+const SESSION_KEY = "SonuSuraj";
+const API_BASE = "https://star-guild-info.lovable.app/api/public/info";
+
+let activeGuilds = []; // Only shows currently active created team
+let pollTimer = null;
+let gridHasCards = false;
+const history = {}; // glory samples per guild for the sparkline
+
+/* -------- AUTH -------- */
+function boot(){
+  const saved = localStorage.getItem(SESSION_KEY);
+  if(saved === ACCESS_KEY) showApp(true);
+}
+function doLogin(e){
+  e.preventDefault();
+  const v = document.getElementById("gate-key").value.trim();
+  const err = document.getElementById("gate-err");
+  if(v === ACCESS_KEY){
+    localStorage.setItem(SESSION_KEY, v);
+    err.textContent = ""; showApp(false);
+  } else {
+    err.textContent = "✕ INVALID KEY";
+    document.getElementById("gate-key").value = "";
+    const c = document.getElementById("gate-card");
+    c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake");
+  }
+}
+async function doLogout(){
+  if(!(await ask("Logout from SILENT?"))) return;
+  localStorage.removeItem(SESSION_KEY); location.reload();
+}
+function showApp(restore){
+  const gate = document.getElementById("gate"), app = document.getElementById("app");
+  if(restore){ gate.style.display="none"; app.style.display="block"; startEngine(); return; }
+  gate.style.transition="opacity .35s"; gate.style.opacity="0";
+  setTimeout(()=>{ gate.style.display="none"; app.style.display="block"; startEngine(); }, 350);
+}
+
+/* -------- ENGINE -------- */
+function startEngine(){
+  // Clear any old tracked data from localStorage
+  localStorage.removeItem("tracked_guilds");
+
+  refreshNow();
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(()=>{ pollGuilds(); }, 10000); // 10 SECONDS
+}
+
+async function fetchGuild(region, clan_id){
+  try {
+    const url = `${API_BASE}?clan_id=${encodeURIComponent(clan_id)}&region=${encodeURIComponent(region.toLowerCase())}`;
+    const r = await fetch(url, {cache:"no-store"});
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    return await r.json();
+  } catch(e) { console.error("Guild fetch failed:", e); return null; }
+}
+
+async function refreshNow(){
+  if(activeGuilds.length === 0) {
+    document.getElementById("hero").classList.remove("show");
+  }
+  await pollGuilds();
+  await fetchStats();
+}
+
+async function pollGuilds(){
+  if(activeGuilds.length === 0) return 0;
+  const results = [];
+  for(const g of activeGuilds){
+    const data = await fetchGuild(g.region, g.clan_id);
+    if(data && data.status === "success"){
+      const enriched = await attachBaseline(g.region, g.clan_id, data);
+      results.push(enriched);
+    }
+  }
+  if(results.length > 0){
+    const h = results[0];
+    const key = h.region + "_" + h.clan_id;
+    (history[key] = history[key] || []).push(h.current_glory);
+    if(history[key].length > 60) history[key].shift();
+    renderHero(h, history[key]);
+    renderGuildGrid(results);
+    if(document.getElementById("detail-panel").classList.contains("show")){
+      renderDetail(h, true);
+    }
+  }
+  return results.length;
+}
+
+async function attachBaseline(region, clan_id, apiData){
+  const currentGlory = Number(apiData.glory_points || apiData.score || 0);
+  let baseline = null;
+  try {
+    const r = await fetch(`/api/guild/info?region=${encodeURIComponent(region)}&clan_id=${encodeURIComponent(clan_id)}`, {cache:"no-store"});
+    if(r.ok) { const d = await r.json(); baseline = Number(d.baseline_glory ?? currentGlory); }
+  } catch(e) {}
+
+  if(baseline === null) baseline = Number(localStorage.getItem(`base_${region}_${clan_id}`) || currentGlory);
+  localStorage.setItem(`base_${region}_${clan_id}`, baseline);
+
+  return {
+    region: region.toUpperCase(),
+    clan_id: String(clan_id),
+    guild_name: apiData.clan_name || apiData.guild_name || "Unknown Guild",
+    guild_level: Number(apiData.guild_level || apiData.level || 0),
+    current_members: Number(apiData.current_members || 0),
+    total_members: Number(apiData.total_members || 0),
+    members_online: Number(apiData.members_online || 0),
+    guild_bio: apiData.guild_bio || "",
+    guild_rank: Number(apiData.rank || apiData.guild_position || 0),
+    current_glory: currentGlory,
+    baseline_glory: baseline,
+    gained_glory: currentGlory - baseline,
+  };
+}
+
+/* -------- RENDER -------- */
+function renderHero(g, samples){
+  document.getElementById("hero").classList.add("show");
+  countTo(document.getElementById("hero-num"), g.current_glory);
+  document.getElementById("hero-gained").innerHTML = `<i class="fa-solid fa-arrow-trend-${g.gained_glory < 0 ? "down" : "up"}"></i> ${signed(g.gained_glory)} gained`;
+  document.getElementById("hero-base").textContent = fmt(g.baseline_glory);
+  document.getElementById("hero-name").textContent = g.guild_name.length > 22 ? g.guild_name.slice(0,20)+"…" : g.guild_name;
+  document.getElementById("hero-members").textContent = `${g.current_members}/${g.total_members}`;
+  document.getElementById("hero-level").textContent = `Lv ${g.guild_level}`;
+  drawSpark(samples || []);
+}
+
+function drawSpark(v){
+  const box = document.getElementById("hero-spark");
+  if(v.length < 2){
+    box.innerHTML = `<span class="spark-tag">Live trend</span><div class="spark-empty">Collecting data…</div>`;
+    return;
+  }
+  const W = 300, H = 96, pad = 14;
+  const min = Math.min(...v), max = Math.max(...v), rng = max - min;
+  const pts = v.map((val,i)=>[
+    (i/(v.length-1))*W,
+    rng === 0 ? H/2 : H - pad - ((val-min)/rng)*(H - pad*2)
+  ]);
+  const line = pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const area = line + ` L${W} ${H} L0 ${H} Z`;
+  const last = pts[pts.length-1];
+  box.innerHTML = `
+    <span class="spark-tag">Live trend</span>
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+      <path d="${area}" fill="url(#sg)"/>
+      <path d="${line}" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    </svg>
+    <span class="spark-dot" style="left:${(last[0]/W*100).toFixed(2)}%;top:${(last[1]/H*100).toFixed(2)}%"></span>`;
+}
+
+function renderGuildGrid(list){
+  const grid = document.getElementById("guild-grid");
+  if(list.length === 0){
+    gridHasCards = false;
+    grid.innerHTML = `<div class="empty-state" id="empty-state">
+      <i class="fa-solid fa-ghost"></i>
+      <p>No active team yet</p>
+      <button class="btn btn-w" onclick="openModal()"><i class="fa-solid fa-plus"></i> Create Team</button>
+    </div>`;
+    return;
+  }
+  const enter = !gridHasCards; gridHasCards = true;
+  grid.innerHTML = list.map((g,i)=>`
+    <div class="guild-card${enter ? " enter" : ""}" style="animation-delay:${i*60}ms" onclick='openDetail(${i})'>
+      <div class="gc-head">
+        <div>
+          <div class="gc-name">${esc(g.guild_name)}</div>
+          <span class="gc-region">${esc(g.region)}</span>
+        </div>
+        <span class="gc-level">LV ${g.guild_level}</span>
+      </div>
+      <div class="gc-stats">
+        <div class="gc-stat"><span>Glory</span><strong>${fmt(g.current_glory)}</strong></div>
+        <div class="gc-stat gain${g.gained_glory < 0 ? " neg" : ""}"><span>Gained</span><strong>${fmt(Math.abs(g.gained_glory))}</strong></div>
+        <div class="gc-stat"><span>Members</span><strong>${g.current_members}/${g.total_members}</strong></div>
+        <div class="gc-stat"><span>Online</span><strong>${g.members_online}</strong></div>
+      </div>
+      <div class="gc-foot">
+        <span>ID<b>${esc(g.clan_id)}</b></span>
+        <span>Rank<b>#${fmt(g.guild_rank)}</b></span>
+      </div>
+    </div>
+  `).join("");
+}
+
+function showSkeleton(){
+  gridHasCards = false;
+  document.getElementById("guild-grid").innerHTML = `<div class="guild-card skel"><div class="sk sk-t"></div><div class="sk sk-s"></div><div class="sk sk-b"></div></div>`;
+}
+
+function openDetail(i){
+  const g = activeGuilds[i];
+  if(!g) return;
+  fetchGuild(g.region, g.clan_id).then(async d=>{
+    if(!d) return;
+    const enriched = await attachBaseline(g.region, g.clan_id, d);
+    renderDetail(enriched);
+  });
+}
+
+function renderDetail(g, silent){
+  const panel = document.getElementById("detail-panel");
+  const title = document.getElementById("dp-title-txt");
+  const body = document.getElementById("dp-body");
+  title.textContent = `${g.guild_name} — ${g.region} · ${g.clan_id}`;
+  body.innerHTML = `
+    <div class="dp-grid">
+      <div class="gc-stat"><span>Current Glory</span><strong>${fmt(g.current_glory)}</strong></div>
+      <div class="gc-stat gain${g.gained_glory < 0 ? " neg" : ""}"><span>Gained</span><strong>${fmt(Math.abs(g.gained_glory))}</strong></div>
+      <div class="gc-stat"><span>Baseline</span><strong>${fmt(g.baseline_glory)}</strong></div>
+      <div class="gc-stat"><span>Rank</span><strong>#${fmt(g.guild_rank)}</strong></div>
+      <div class="gc-stat"><span>Level</span><strong>Lv ${g.guild_level}</strong></div>
+      <div class="gc-stat"><span>Members</span><strong>${g.current_members}/${g.total_members}</strong></div>
+    </div>
+    <div class="dp-bio"><b>Bio</b>${esc(g.guild_bio || "—")}</div>
+    <div class="dp-actions">
+      <button class="btn" onclick="resetBaseline('${esc(g.region)}','${esc(g.clan_id)}')"><i class="fa-solid fa-rotate-left"></i> Reset Baseline</button>
+      <button class="btn" onclick="closeDetail()"><i class="fa-solid fa-xmark"></i> Close</button>
+    </div>
+  `;
+  const wasOpen = panel.classList.contains("show");
+  panel.classList.add("show");
+  if(!silent && !wasOpen) panel.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function closeDetail(){ document.getElementById("detail-panel").classList.remove("show"); }
+
+async function resetBaseline(region, clan_id){
+  if(!(await ask("Reset baseline to current glory?"))) return;
+  try {
+    await fetch("/api/guild/reset", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({region, clan_id})});
+    await pollGuilds();
+    toast("Baseline reset");
+  } catch(e){ toast("Failed to reset baseline", "err"); }
+}
+
+/* -------- STATS + LOGS -------- */
+async function fetchStats(){
+  try {
+    const r = await fetch("/api/stats", {cache:"no-store"});
+    const d = await r.json();
+    const logs = Array.isArray(d.logs) ? d.logs : [];
+    const stream = document.getElementById("console-body");
+    stream.innerHTML = logs.map(l=>`
+      <div class="log"><span class="log-t">[${esc(l.time||"")}]</span><span class="log-m ${esc(l.level||"info")}">${esc(l.message||"")}</span></div>
+    `).join("");
+    stream.scrollTop = stream.scrollHeight;
+  } catch(e){}
+}
+async function clearLogs(){
+  try { await fetch("/api/logs/clear", {method:"POST"}); } catch(e){}
+  document.getElementById("console-body").innerHTML = "";
+}
+
+/* -------- CREATE TEAM -------- */
+function openModal(){ document.getElementById("modal").classList.add("show"); }
+function closeModal(){ document.getElementById("modal").classList.remove("show"); }
+document.getElementById("modal").addEventListener("click", e=>{ if(e.target.id === "modal") closeModal(); });
+
+async function submitTeam(e){
+  e.preventDefault();
+  const region = document.getElementById("m-region").value;
+  const clan = document.getElementById("m-clan").value.trim();
+  const count = parseInt(document.getElementById("m-count").value, 10);
+  if(!clan){ toast("Guild ID is required", "err"); return; }
+
+  const btn = document.getElementById("m-submit");
+  btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Creating...';
+
+  // 1. Clear old guilds, set ONLY this new one
+  activeGuilds = [{ region, clan_id: String(clan) }];
+  delete history[region.toUpperCase() + "_" + clan];
+  document.getElementById("hero").classList.remove("show");
+  document.getElementById("hero-num")._v = 0;
+  closeModal();
+  showSkeleton();
+
+  // 2. Clear the old baseline from local storage for this specific guild
+  localStorage.removeItem(`base_${region.toUpperCase()}_${clan}`);
+
+  // 3. Call create_team API (if you have it on backend)
+  try {
+    await fetch("/api/create_team", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({region, clan_id: clan, count, password: "SonuSuraj"})
+    });
+  } catch(e) { /* Fine if endpoint is missing */ }
+
+  // 4. Force fetch to generate new baseline & show only this guild
+  const n = await pollGuilds();
+  await fetchStats();
+
+  if(n === 0){
+    activeGuilds = [];
+    renderGuildGrid([]);
+    toast("Guild not found — check region & ID", "err");
+  } else {
+    toast("Team started");
+  }
+
+  btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Create & Start';
+}
+
+/* -------- TABS -------- */
+function tabHome(btn){ setActive(btn); window.scrollTo({top:0,behavior:"smooth"}); }
+function tabConsole(btn){ setActive(btn); document.querySelector(".console").scrollIntoView({behavior:"smooth",block:"start"}); }
+function setActive(btn){
+  document.querySelectorAll(".mnav-btn").forEach(b=>b.classList.remove("on"));
+  if(btn) btn.classList.add("on");
+}
+
+/* -------- CARD SPOTLIGHT -------- */
+document.getElementById("guild-grid").addEventListener("pointermove", e=>{
+  const card = e.target.closest(".guild-card");
+  if(!card) return;
+  const r = card.getBoundingClientRect();
+  card.style.setProperty("--mx", (e.clientX - r.left) + "px");
+  card.style.setProperty("--my", (e.clientY - r.top) + "px");
+});
+
+/* -------- UI HELPERS -------- */
+function toast(msg, type){
+  const box = document.getElementById("toasts");
+  const t = document.createElement("div");
+  t.className = "toast" + (type === "err" ? " err" : "");
+  t.innerHTML = `<i class="fa-solid ${type === "err" ? "fa-triangle-exclamation" : "fa-check"}"></i><span>${esc(msg)}</span>`;
+  box.appendChild(t);
+  setTimeout(()=>{ t.classList.add("out"); setTimeout(()=>t.remove(), 300); }, 2800);
+}
+
+function ask(msg){
+  return new Promise(res=>{
+    const d = document.getElementById("ask");
+    const yes = document.getElementById("ask-yes"), no = document.getElementById("ask-no");
+    document.getElementById("ask-msg").textContent = msg;
+    const done = v => { d.close(); yes.onclick = no.onclick = d.oncancel = null; res(v); };
+    yes.onclick = () => done(true);
+    no.onclick = () => done(false);
+    d.oncancel = e => { e.preventDefault(); done(false); };
+    d.showModal();
+  });
+}
+
+function countTo(el, to){
+  to = Number(to || 0);
+  const from = el._v ?? 0;
+  el._v = to;
+  if(from === to){ el.textContent = fmt(to); return; }
+  const t0 = performance.now(), dur = 800;
+  (function step(t){
+    const p = Math.min(1, (t - t0) / dur);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(Math.round(from + (to - from) * e));
+    if(p < 1) requestAnimationFrame(step);
+  })(t0);
+}
+
+/* -------- UTILS -------- */
+function fmt(n){ return Number(n||0).toLocaleString("en-IN"); }
+function signed(n){ n = Number(n||0); return (n < 0 ? "−" : "+") + Math.abs(n).toLocaleString("en-IN"); }
+function esc(s){ return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
+
+/* -------- BOOT -------- */
+if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();
+</script>
+</body>
+</html>
