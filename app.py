@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # ============================================================
-#   main.py — DG DRIFT / FFGLORY COMPLETE SERVER + 2-BOT DUO ENGINE
+#   main.py — HAMMAD PAPA  / FFGLORY COMPLETE SERVER + 2-BOT DUO ENGINE
 #   • Duo Join Fix (accept_team_invite + join_team_by_code + 0500 multi-offset)
 #   • Full Web Backend for:
 #       - ffglory.html (Landing Page: / or /ffglory)
@@ -45,7 +45,7 @@ except Exception:
 
 # ==================== CONFIG ====================
 WEB_HOST = "0.0.0.0"
-WEB_PORT = int(os.environ.get("PORT", 26229))
+WEB_PORT = int(os.environ.get("PORT", 27411))
 ACCOUNTS_FILE = "accounts.json"
 TOKEN_CACHE_FILE = "token_cache.json"
 DEVICES_FILE = "devices.json"
@@ -1083,7 +1083,8 @@ async def version_config(region="BD"):
         server_url = j.get("server_url")
         remote_version = j.get("remote_version")
         latest_release_version = j.get("latest_release_version")
-        gops = [u.strip() for u in j.get("gop_url","").split(";") if u.strip()]
+        gop_url = j.get("gop_url") or ""
+        gops = [u.strip() for u in gop_url.split(";") if u.strip()]
         gop_1 = gops[0] if gops else "https://ffmconnect.ppmainecoonghj.com"
         if not server_url: return None
         return latest_release_version, remote_version, server_url, gop_1, app_version
@@ -1732,9 +1733,15 @@ def _save_token_cache(cache):
 def cache_get(uid):
     cache = _load_token_cache()
     e = cache.get(str(uid))
-    if not e: return None
+    if not isinstance(e, dict): return None
     if time.time() - e.get("cached_at",0) > TOKEN_CACHE_TTL:
         cache_invalidate(uid); return None
+    try:
+        _split_server_address(e.get("functional_addrs"), "cached functional_addrs")
+    except (TypeError, ValueError):
+        # Old/incomplete cache records must not keep restarting a broken worker.
+        cache_invalidate(uid)
+        return None
     if str(e.get("account_id","")).isdigit(): e["account_id"] = int(e["account_id"])
     if not isinstance(e.get("login_payload_data"), (bytes, bytearray)):
         cache_invalidate(uid); return None
@@ -1943,11 +1950,27 @@ async def play_game(server_ip_port, thunder, sharma, udp_key, match_code,
         except Exception: pass
 
 
+# ==================== SERVER ADDRESS VALIDATION ====================
+def _split_server_address(addrs, field_name="server address"):
+    """Validate the host:port values returned by the login endpoint."""
+    if not isinstance(addrs, str):
+        raise ValueError(f"Missing or invalid {field_name}: expected host:port")
+    value = addrs.strip()
+    if not value or value.count(":") != 1:
+        raise ValueError(f"Invalid {field_name}: expected host:port, got {value!r}")
+    host, port_text = value.rsplit(":", 1)
+    if not host or not port_text.isdigit():
+        raise ValueError(f"Invalid {field_name}: expected host:port, got {value!r}")
+    port = int(port_text)
+    if not 1 <= port <= 65535:
+        raise ValueError(f"Invalid {field_name} port: {port_text!r}")
+    return host, port
+
 # ==================== FUNCTIONAL DUO TEAM LOOP ====================
 async def functional_lone_wolf(addrs, starter_packet, account_region, client_version,
                                 key, iv, account_id="", account_data=None, max_reconnects=10):
     reconnects = 0
-    ip, port = addrs.split(":")
+    ip, port = _split_server_address(addrs, "functional_addrs")
     play_matches: List[asyncio.Task] = []
     no_response_count = 0
     search_attempts = 0
@@ -2546,7 +2569,7 @@ async def functional_lone_wolf(addrs, starter_packet, account_region, client_ver
 async def informational(addrs, starter_packet, key, iv, region="BD",
                         account_id="", max_reconnects=3, account_data=None):
     uid_str = str(account_id); reconnects = 0
-    ip, port = addrs.split(":")
+    ip, port = _split_server_address(addrs, "informational_addrs")
     while True:
         while uid_str and bot_state.is_paused(uid_str):
             await asyncio.sleep(1.0)
@@ -2675,8 +2698,7 @@ async def process_account_uid_pass(uid, password, region_override=None):
             if not getlogin_json: return None
 
         def _gf(f, d=None):
-            v = getlogin_json.get(str(f), {}).get("data")
-            return v if v is not None else d
+            return _gf_field(getlogin_json, f, d)
 
         level = int(_gf(6,1) or 1); exp = int(_gf(7,0) or 0)
         likes = int(_gf(8,0) or 0)
@@ -2704,6 +2726,16 @@ async def run_account_worker(ad, label, region_override=None, clan_override=None
     acc_id = str(ad['account_id'])
     info_task = None; exp_task = None; ping_task = None
     try:
+        # The functional endpoint is required; validate before starting any side tasks.
+        _split_server_address(ad.get('functional_addrs'), 'functional_addrs')
+        # The informational endpoint is optional and must never block match execution.
+        info_addrs = ad.get('informational_addrs')
+        try:
+            _split_server_address(info_addrs, 'informational_addrs')
+        except (TypeError, ValueError):
+            info_addrs = None
+            print_warning(f"[INFO] informational_addrs unavailable for account {acc_id}; info connection skipped")
+
         reg = region_override or ad.get('region','BD')
         tcp_online = await build_tcp_startup_packet(
             ad['account_id'], ad['token'], ad['server_time'],
@@ -2716,9 +2748,10 @@ async def run_account_worker(ad, label, region_override=None, clan_override=None
                 await asyncio.sleep(1.0)
                 await join_clan(ad['token'], clan_override)
             except Exception as e: print_warning(f"[CLAN] {e}")
-        info_task = asyncio.create_task(informational(
-            ad['informational_addrs'], tcp_chat, ad['aes_ak'], ad['iv_i'],
-            region=reg, account_id=acc_id, account_data=ad))
+        if info_addrs:
+            info_task = asyncio.create_task(informational(
+                info_addrs, tcp_chat, ad['aes_ak'], ad['iv_i'],
+                region=reg, account_id=acc_id, account_data=ad))
         async def exp_refresher():
             while True:
                 await asyncio.sleep(90 + random.uniform(-10,10))
@@ -2735,7 +2768,7 @@ async def run_account_worker(ad, label, region_override=None, clan_override=None
             except Exception:
                 pass
         await functional_lone_wolf(
-            ad['functional_addrs'], tcp_online, reg, ad['client_version'],
+            ad['functional_addrs'].strip(), tcp_online, reg, ad['client_version'],
             ad['aes_ak'], ad['iv_i'], account_id=acc_id, account_data=ad)
     except asyncio.CancelledError: raise
     except Exception as e:
@@ -2775,9 +2808,12 @@ async def account_loop_guest(uid, password, region_override=None, clan_override=
 
 # ==================== CREATE ACCOUNTS ====================
 def _gf_field(ld, key, default=None):
-    if not ld: return default
-    v = ld.get(str(key), {})
-    if isinstance(v, dict): return v.get("data", default)
+    if not isinstance(ld, dict):
+        return default
+    v = ld.get(str(key))
+    if isinstance(v, dict):
+        value = v.get("data", default)
+        return value if value is not None else default
     return v if v is not None else default
 
 async def choose_region(region, jwt_token, login_url, release_version):
@@ -2850,7 +2886,7 @@ async def create_four_accounts(region: str, clan_id: str, count: int = 2, passwo
                     if not major_payload or not login_payload:
                         await asyncio.sleep(2); continue
 
-                    nickname_final = f"SILENT-{''.join(random.choices(string.ascii_uppercase + string.digits, k=4))}"
+                    nickname_final = f"HAMMAD-{''.join(random.choices(string.ascii_uppercase + string.digits, k=4))}"
                     mr = await major_register(release_v, access_token, open_id,
                                               nickname_final, game_version, login_url, lang)
                     if not mr:
@@ -2919,8 +2955,7 @@ async def create_four_accounts(region: str, clan_id: str, count: int = 2, passwo
                     level = 1; exp = 0; likes = 0
                     if ld:
                         def _gf(f, d=None):
-                            v = ld.get(str(f), {}).get("data")
-                            return v if v is not None else d
+                            return _gf_field(ld, f, d)
                         level = int(_gf(6, 1) or 1); exp = int(_gf(7, 0) or 0)
                         likes = int(_gf(8, 0) or 0)
                         nickname_final = _gf(4, nickname_final) or nickname_final
@@ -3023,8 +3058,7 @@ async def account_loop_token(token):
         ld = await get_login_data(login_payload, jwt_token, server_url_raw, release_version)
 
         def _gf(f, d=None):
-            v = (ld or {}).get(str(f), {}).get("data")
-            return v if v is not None else d
+            return _gf_field(ld, f, d)
 
         level = int(_gf(6,1) or 1); exp = int(_gf(7,0) or 0)
         nickname = _gf(4, f"Player_{acc_id_raw}") or f"Player_{acc_id_raw}"
@@ -4235,7 +4269,7 @@ async def start_web_server():
 # ==================== MAIN ====================
 async def main():
     print("\033[95m" + "╔══════════════════════════════════════════════════════╗" + "\033[0m")
-    print("\033[95m" + "║        👑  SILENT / FFGLORY PANEL  👑              ║" + "\033[0m")
+    print("\033[95m" + "║        👑  HAMMAD PAPA  / FFGLORY PANEL  👑              ║" + "\033[0m")
     print("\033[96m" + "║   Duo Mode (2 Bots) | Admin & Client Panel | Movement ║" + "\033[0m")
     print("\033[95m" + "╚══════════════════════════════════════════════════════╝" + "\033[0m")
     try:
