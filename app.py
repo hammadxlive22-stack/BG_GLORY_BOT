@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # ============================================================
-#   main.py — HAMMAD PAPA  / FFGLORY COMPLETE SERVER + 2-BOT DUO ENGINE
+#   main.py — DG DRIFT / FFGLORY COMPLETE SERVER + 2-BOT DUO ENGINE
 #   • Duo Join Fix (accept_team_invite + join_team_by_code + 0500 multi-offset)
 #   • Full Web Backend for:
 #       - ffglory.html (Landing Page: / or /ffglory)
@@ -2850,7 +2850,7 @@ async def create_four_accounts(region: str, clan_id: str, count: int = 2, passwo
                     if not major_payload or not login_payload:
                         await asyncio.sleep(2); continue
 
-                    nickname_final = f"HAMMAD-{''.join(random.choices(string.ascii_uppercase + string.digits, k=4))}"
+                    nickname_final = f"SILENT-{''.join(random.choices(string.ascii_uppercase + string.digits, k=4))}"
                     mr = await major_register(release_v, access_token, open_id,
                                               nickname_final, game_version, login_url, lang)
                     if not mr:
@@ -4235,7 +4235,7 @@ async def start_web_server():
 # ==================== MAIN ====================
 async def main():
     print("\033[95m" + "╔══════════════════════════════════════════════════════╗" + "\033[0m")
-    print("\033[95m" + "║        👑  HAMMAD PAPA  / FFGLORY PANEL  👑              ║" + "\033[0m")
+    print("\033[95m" + "║        👑  SILENT / FFGLORY PANEL  👑              ║" + "\033[0m")
     print("\033[96m" + "║   Duo Mode (2 Bots) | Admin & Client Panel | Movement ║" + "\033[0m")
     print("\033[95m" + "╚══════════════════════════════════════════════════════╝" + "\033[0m")
     try:
